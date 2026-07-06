@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Iron Log">
+<title>Iron Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14161A;
+    --steel:#1E2128;
+    --steel-light:#2A2E37;
+    --hairline:#34394333;
+    --chalk:#EDEDE6;
+    --muted:#8A8F98;
+    --accent:#E8B23D;
+    --accent-dim:#5c4a22;
+    --iron-blue:#5B7C99;
+    --danger:#C4573F;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:calc(env(safe-area-inset-top) + 18px) 18px 100px;
+  }
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:22px;
+  }
+  .wordmark{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--chalk);
+  }
+  .wordmark span{color:var(--accent);}
+  .gear{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:18px;
+    cursor:pointer;
+    padding:6px;
+  }
+  .day-nav{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--steel);
+    border-radius:var(--radius);
+    padding:10px 12px;
+    margin-bottom:20px;
+  }
+  .day-nav button{
+    background:var(--steel-light);
+    border:none;
+    color:var(--chalk);
+    width:36px;
+    height:36px;
+    border-radius:10px;
+    font-size:18px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .day-nav button:active{background:var(--accent-dim);}
+  .day-info{flex:1; text-align:center; min-width:0;}
+  .day-info .dow{
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    font-size:12px;
+    color:var(--accent);
+  }
+  .day-info .full-date{
+    font-size:14px;
+    color:var(--muted);
+  }
+  .day-info input[type=date]{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    text-align:center;
+    width:100%;
+    padding-top:2px;
+  }
+  .today-btn{
+    font-size:11px;
+    color:var(--iron-blue);
+    background:none;
+    border:1px solid var(--iron-blue);
+    border-radius:8px;
+    padding:6px 8px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .session-total{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    margin:-8px 0 18px 2px;
+  }
+  .session-total b{color:var(--chalk);}
+  .list{display:flex; flex-direction:column; gap:12px;}
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+  }
+  .empty .big{
+    font-family:'Oswald',sans-serif;
+    font-size:16px;
+    color:var(--chalk);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-bottom:8px;
+  }
+  .card{
+    background:var(--steel);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    border:1px solid transparent;
+    transition:border-color .15s;
+  }
+  .card.open{border-color:var(--accent-dim);}
+  .card.done{background:#1E3A2C; border-color:#3C7A54;}
+  .card.done .ex-name{color:#BFE8CE;}
+  .card-head{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+  }
+  .done-check{
+    flex-shrink:0;
+    width:24px;
+    height:24px;
+    border-radius:7px;
+    border:2px solid var(--muted);
+    background:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+  }
+  .done-check svg{width:14px; height:14px; opacity:0; transition:opacity .1s;}
+  .card.done .done-check{background:#3C7A54; border-color:#3C7A54;}
+  .card.done .done-check svg{opacity:1;}
+  .plate-rig{
+    flex-shrink:0;
+    width:52px;
+    height:32px;
+  }
+  .card-main{flex:1; min-width:0;}
+  .ex-name{
+    font-family:'Oswald',sans-serif;
+    font-size:16px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .ex-meta{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+  .ex-meta b{color:var(--iron-blue); font-weight:700;}
+  .chevron{
+    color:var(--muted);
+    font-size:14px;
+    transform:rotate(0deg);
+    transition:transform .15s;
+    flex-shrink:0;
+  }
+  .card.open .chevron{transform:rotate(180deg);}
+  .card-body{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .2s ease;
+  }
+  .card.open .card-body{max-height:600px;}
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:16px;
+  }
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field.full{grid-column:1 / -1;}
+  .field label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+  }
+  .field input, .field textarea{
+    background:var(--steel-light);
+    border:1px solid var(--hairline);
+    border-radius:9px;
+    padding:9px 10px;
+    color:var(--chalk);
+    font-family:'JetBrains Mono',monospace;
+    font-size:14px;
+  }
+  .field input[type=text], .field textarea{font-family:'Inter',sans-serif;}
+  .field textarea{resize:vertical; min-height:44px;}
+  .field input:focus, .field textarea:focus{outline:2px solid var(--accent); outline-offset:-1px;}
+  .rest-row{display:flex; align-items:center; gap:8px;}
+  .rest-row input{width:100%;}
+  .card-actions{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:14px;
+  }
+  .timer-btn{
+    background:var(--iron-blue);
+    color:#0e1620;
+    border:none;
+    border-radius:9px;
+    padding:9px 12px;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .timer-btn.running{background:var(--accent);}
+  .delete-btn{
+    background:none;
+    border:none;
+    color:var(--danger);
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    cursor:pointer;
+  }
+  .fab{
+    position:fixed;
+    left:50%;
+    bottom:calc(24px + env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    max-width:520px;
+    width:calc(100% - 36px);
+    display:flex;
+    gap:12px;
+    justify-content:flex-end;
+  }
+  .fab button{
+    background:var(--accent);
+    color:#26200c;
+    border:none;
+    width:58px;
+    height:58px;
+    border-radius:50%;
+    font-size:28px;
+    font-weight:600;
+    box-shadow:0 6px 18px rgba(0,0,0,0.4);
+    cursor:pointer;
+    line-height:1;
+  }
+  .fab button.run-fab{
+    background:var(--iron-blue);
+    color:#0e1620;
+    font-size:24px;
+  }
+  .sheet-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(10,11,13,0.6);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:20;
+  }
+  .sheet-overlay.show{display:flex;}
+  .sheet{
+    background:var(--steel);
+    width:100%;
+    max-width:520px;
+    border-radius:20px 20px 0 0;
+    padding:20px 20px calc(24px + env(safe-area-inset-bottom));
+    max-height:85vh;
+    overflow-y:auto;
+  }
+  .sheet-title{
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    font-size:17px;
+    margin-bottom:4px;
+  }
+  .sheet-sub{font-size:12px; color:var(--muted); margin-bottom:14px;}
+  .sheet-actions{
+    display:flex;
+    gap:10px;
+    margin-top:18px;
+  }
+  .btn{
+    flex:1;
+    border:none;
+    border-radius:10px;
+    padding:13px;
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .btn.primary{background:var(--accent); color:#26200c;}
+  .btn.ghost{background:var(--steel-light); color:var(--chalk);}
+  .unit-toggle{display:flex; gap:8px; margin-top:6px;}
+  .unit-toggle button{
+    flex:1;
+    background:var(--steel-light);
+    border:1px solid var(--hairline);
+    color:var(--muted);
+    padding:8px;
+    border-radius:8px;
+    font-family:'JetBrains Mono',monospace;
+    cursor:pointer;
+  }
+  .unit-toggle button.active{
+    background:var(--accent-dim);
+    color:var(--accent);
+    border-color:var(--accent);
+  }
+  .run-type-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:6px;
+  }
+  .run-type-grid button{
+    background:var(--steel-light);
+    border:1px solid var(--hairline);
+    color:var(--muted);
+    padding:10px;
+    border-radius:9px;
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .run-type-grid button.active{
+    background:var(--accent-dim);
+    color:var(--accent);
+    border-color:var(--accent);
+  }
+  .storage-note{
+    font-size:11px;
+    color:var(--muted);
+    line-height:1.5;
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--hairline);
+  }
+  .cal-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .cal-nav button{
+    background:var(--steel-light);
+    border:none;
+    color:var(--chalk);
+    width:34px;
+    height:34px;
+    border-radius:9px;
+    font-size:16px;
+    cursor:pointer;
+  }
+  .cal-month-label{
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    font-size:16px;
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+  }
+  .cal-dow{
+    text-align:center;
+    font-size:10px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    padding-bottom:4px;
+  }
+  .cal-day{
+    position:relative;
+    aspect-ratio:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+    background:var(--steel-light);
+    border:1px solid transparent;
+    color:var(--chalk);
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .cal-day.empty{background:none; cursor:default;}
+  .cal-day.today{border-color:var(--iron-blue); color:var(--iron-blue);}
+  .cal-day.selected{background:var(--accent); color:#26200c; font-weight:700;}
+  .cal-day.done-day{background:#1E3A2C; color:#BFE8CE;}
+  .cal-day.selected.done-day{background:var(--accent); color:#26200c;}
+  .cal-dot{
+    position:absolute;
+    bottom:4px;
+    width:4px;
+    height:4px;
+    border-radius:50%;
+    background:var(--accent);
+  }
+  .cal-day.selected .cal-dot{background:#26200c;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="wordmark">Iron<span>Log</span></div>
+    <div style="display:flex; gap:4px;">
+      <button class="gear" id="calendarBtn" aria-label="Open calendar">📅</button>
+      <button class="gear" id="settingsBtn" aria-label="Settings">⚙</button>
+    </div>
+  </header>
+
+  <div class="day-nav">
+    <button id="prevDay" aria-label="Previous day">‹</button>
+    <div class="day-info">
+      <div class="dow" id="dowLabel">—</div>
+      <input type="date" id="datePicker">
+    </div>
+    <button id="nextDay" aria-label="Next day">›</button>
+    <button class="today-btn" id="todayBtn">Today</button>
+  </div>
+
+  <div class="session-total" id="sessionTotal"></div>
+
+  <div class="list" id="list"></div>
+
+  <div class="fab">
+    <button id="runBtn" class="run-fab" aria-label="Add run">🏃</button>
+    <button id="addBtn" aria-label="Add exercise">+</button>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="formOverlay">
+  <div class="sheet">
+    <div class="sheet-title" id="formTitle">New Exercise</div>
+    <div class="sheet-sub">Assigned to <span id="formDateLabel"></span></div>
+    <div class="form-grid">
+      <div class="field full">
+        <label for="f-name">Exercise name</label>
+        <input type="text" id="f-name" placeholder="e.g. Barbell Squat">
+      </div>
+      <div class="field">
+        <label for="f-sets">Sets</label>
+        <input type="number" id="f-sets" min="0" inputmode="numeric" placeholder="4">
+      </div>
+      <div class="field">
+        <label for="f-reps">Reps</label>
+        <input type="number" id="f-reps" min="0" inputmode="numeric" placeholder="8">
+      </div>
+      <div class="field">
+        <label id="f-weight-label" for="f-weight">Weight (lb)</label>
+        <input type="number" id="f-weight" min="0" step="0.5" inputmode="decimal" placeholder="135">
+      </div>
+      <div class="field">
+        <label for="f-rest">Rest (mm:ss)</label>
+        <div class="rest-row">
+          <input type="number" id="f-rest-min" min="0" inputmode="numeric" placeholder="1" style="width:50%">
+          <input type="number" id="f-rest-sec" min="0" max="59" inputmode="numeric" placeholder="30" style="width:50%">
+        </div>
+      </div>
+      <div class="field full">
+        <label for="f-notes">Notes</label>
+        <textarea id="f-notes" placeholder="Form cues, how it felt, next time..."></textarea>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="cancelForm">Cancel</button>
+      <button class="btn primary" id="saveForm">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="runFormOverlay">
+  <div class="sheet">
+    <div class="sheet-title" id="runFormTitle">New Run</div>
+    <div class="sheet-sub">Assigned to <span id="runFormDateLabel"></span></div>
+
+    <div class="field full" style="margin-top:12px;">
+      <label>Run type</label>
+      <div class="run-type-grid" id="runTypeGrid">
+        <button type="button" data-runtype="Long Run">Long Run</button>
+        <button type="button" data-runtype="Interval Run">Interval Run</button>
+        <button type="button" data-runtype="Easy Run">Easy Run</button>
+        <button type="button" data-runtype="Tempo Run">Tempo Run</button>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="field full" id="runDistanceGroup">
+        <label id="r-distance-label">Distance</label>
+        <div class="rest-row">
+          <input type="number" id="r-distance" min="0" step="0.01" inputmode="decimal" style="width:60%" placeholder="5">
+          <div class="unit-toggle" style="width:40%; margin-top:0;">
+            <button data-val="mi" id="rDistUnitA">MI</button>
+            <button data-val="km" id="rDistUnitB">KM</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field full" id="runPaceGroup">
+        <label id="r-pace-label">Pace</label>
+        <div class="rest-row">
+          <input type="text" id="r-pace" placeholder="8:30" style="width:60%">
+          <div class="unit-toggle" style="width:40%; margin-top:0;">
+            <button data-val="min/mi" id="rPaceMi">/MI</button>
+            <button data-val="min/km" id="rPaceKm">/KM</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field full" id="runRestGroup">
+        <label>Rest between intervals (mm:ss)</label>
+        <div class="rest-row">
+          <input type="number" id="r-rest-min" min="0" inputmode="numeric" placeholder="1" style="width:50%">
+          <input type="number" id="r-rest-sec" min="0" max="59" inputmode="numeric" placeholder="30" style="width:50%">
+        </div>
+      </div>
+
+      <div class="field" id="runFastTimeGroup">
+        <label>Fast time (mm:ss)</label>
+        <div class="rest-row">
+          <input type="number" id="r-fast-min" min="0" inputmode="numeric" placeholder="5" style="width:50%">
+          <input type="number" id="r-fast-sec" min="0" max="59" inputmode="numeric" placeholder="0" style="width:50%">
+        </div>
+      </div>
+
+      <div class="field" id="runSlowTimeGroup">
+        <label>Slow time (mm:ss)</label>
+        <div class="rest-row">
+          <input type="number" id="r-slow-min" min="0" inputmode="numeric" placeholder="2" style="width:50%">
+          <input type="number" id="r-slow-sec" min="0" max="59" inputmode="numeric" placeholder="0" style="width:50%">
+        </div>
+      </div>
+
+      <div class="field full" id="runRepsGroup">
+        <label for="r-reps">Repetitions</label>
+        <input type="number" id="r-reps" min="0" inputmode="numeric" placeholder="6">
+      </div>
+
+      <div class="field full">
+        <label for="r-notes">Notes</label>
+        <textarea id="r-notes" placeholder="Route, weather, how it felt..."></textarea>
+      </div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn ghost" id="cancelRunForm">Cancel</button>
+      <button class="btn primary" id="saveRunForm">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="settingsOverlay">
+  <div class="sheet">
+    <div class="sheet-title">Settings</div>
+    <div class="sheet-sub">Applies to how weight is displayed and entered</div>
+    <div class="field">
+      <label>Weight unit</label>
+      <div class="unit-toggle">
+        <button data-unit="lb" id="unitLb">LB</button>
+        <button data-unit="kg" id="unitKg">KG</button>
+      </div>
+    </div>
+    <div class="storage-note">
+      Your workouts are stored only on this device, in this browser. If you open Iron Log in a
+      different browser, or clear Safari's site data, this log won't carry over.
+      For it to work reliably as a home‑screen app, host this file somewhere (e.g. iCloud Drive
+      shared link, GitHub Pages) rather than opening it from Files.
+    </div>
+    <div class="field" style="margin-top:16px;">
+      <label>Backup</label>
+      <div class="sheet-actions" style="margin-top:6px;">
+        <button class="btn ghost" id="exportBtn">Export data</button>
+        <button class="btn ghost" id="importBtn">Import data</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json" style="display:none;">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn primary" id="closeSettings">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="calendarOverlay">
+  <div class="sheet">
+    <div class="cal-nav">
+      <button id="calPrevMonth" aria-label="Previous month">‹</button>
+      <div class="cal-month-label" id="calMonthLabel">—</div>
+      <button id="calNextMonth" aria-label="Next month">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="closeCalendar">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORE_KEY = 'ironlog.workouts.v1';
+  const UNIT_KEY = 'ironlog.unit.v1';
+  let db = {};
+  let unit = 'lb';
+  let selectedDate = todayStr();
+  let calYear, calMonth; // current calendar view, 0-indexed month
+  let openCardId = null;
+  let editingId = null; // id being edited, or null for new
+  let runEditingId = null; // id being edited in run form, or null for new
+  let runType = 'Long Run';
+  let runDistUnit = 'mi';
+  let runPaceUnit = 'min/mi';
+  let timers = {}; // id -> {remaining, interval}
+
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      db = raw ? JSON.parse(raw) : {};
+    }catch(e){ db = {}; }
+    unit = localStorage.getItem(UNIT_KEY) || 'lb';
+  }
+
+  function persist(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(db)); }
+    catch(e){ console.error('Save failed', e); alert('Could not save — storage may be full or unavailable.'); }
+  }
+
+  function uid(){ return 'ex_' + Date.now() + '_' + Math.random().toString(36).slice(2,7); }
+
+  function dowFull(dateStr){
+    const [y,m,d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return { dow: days[dt.getDay()], full: months[dt.getMonth()]+' '+d+', '+y };
+  }
+
+  function shiftDate(dateStr, delta){
+    const [y,m,d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    dt.setDate(dt.getDate()+delta);
+    return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+  }
+
+  function fmtRest(totalSec){
+    const m = Math.floor(totalSec/60), s = totalSec%60;
+    return m+':'+String(s).padStart(2,'0');
+  }
+
+  function plateSvg(weight, maxWeight){
+    // signature element: a tiny barbell whose plate size scales with relative weight
+    const ratio = maxWeight > 0 ? Math.min(weight / maxWeight, 1) : 0;
+    const plateH = 10 + ratio*16; // 10-26
+    const plateW = 5 + ratio*4;
+    const cy = 16;
+    return `<svg class="plate-rig" viewBox="0 0 52 32" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="${cy-1.5}" width="32" height="3" rx="1.5" fill="#8A8F98"/>
+      <rect x="6" y="${cy-plateH/2}" width="${plateW}" height="${plateH}" rx="2" fill="#E8B23D"/>
+      <rect x="${46-plateW}" y="${cy-plateH/2}" width="${plateW}" height="${plateH}" rx="2" fill="#E8B23D"/>
+    </svg>`;
+  }
+
+  const RUN_BADGE_MAP = {
+    'Long Run': {abbr:'LR', color:'#5B7C99'},
+    'Interval Run': {abbr:'IN', color:'#E8B23D'},
+    'Easy Run': {abbr:'ER', color:'#5FA776'},
+    'Tempo Run': {abbr:'TR', color:'#C4573F'}
+  };
+  function runBadge(rt){
+    const {abbr,color} = RUN_BADGE_MAP[rt] || {abbr:'RN', color:'#8A8F98'};
+    return `<div class="plate-rig" style="display:flex;align-items:center;justify-content:center;">
+      <div style="width:38px;height:28px;border-radius:8px;background:${color}22;border:1.5px solid ${color};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;color:${color};">${abbr}</div>
+    </div>`;
+  }
+  function distUnitLabel(u){ return u==='m' ? 'm' : (u==='km' ? 'km' : 'mi'); }
+  function paceUnitLabel(u){ return u==='min/km' ? '/km' : '/mi'; }
+  function runMetaText(e){
+    if(e.runType === 'Tempo Run'){
+      return (e.reps||0)+'× '+fmtRest(Number(e.fastTime)||0)+' fast @ '+(e.pace||'--')+' '+paceUnitLabel(e.paceUnit)+' / '+fmtRest(Number(e.slowTime)||0)+' slow';
+    }
+    if(e.runType === 'Interval Run'){
+      return (e.reps ? e.reps+'× ' : '')+(e.distance||'--')+' '+distUnitLabel(e.distanceUnit)+' @ '+(e.pace||'--')+' '+paceUnitLabel(e.paceUnit)+' · rest '+fmtRest(Number(e.rest)||0);
+    }
+    return (e.distance||'--')+' '+distUnitLabel(e.distanceUnit)+' @ '+(e.pace||'--')+' '+paceUnitLabel(e.paceUnit);
+  }
+
+  function render(){
+    const {dow, full} = dowFull(selectedDate);
+    document.getElementById('dowLabel').textContent = dow;
+    document.getElementById('datePicker').value = selectedDate;
+    document.getElementById('formDateLabel').textContent = full;
+
+    const exercises = db[selectedDate] || [];
+    const list = document.getElementById('list');
+    const totalEl = document.getElementById('sessionTotal');
+
+    if(exercises.length === 0){
+      list.innerHTML = `<div class="empty"><div class="big">No workouts logged</div>Tap + to log a lift, or 🏃 to log a run, for ${full}.</div>`;
+      totalEl.textContent = '';
+      return;
+    }
+
+    const strengthEntries = exercises.filter(e=>e.type!=='run');
+    const runEntries = exercises.filter(e=>e.type==='run');
+    const totalVolume = strengthEntries.reduce((sum,e)=> sum + (Number(e.sets)||0)*(Number(e.reps)||0)*(Number(e.weight)||0), 0);
+    let totalText = exercises.length + ' item'+(exercises.length>1?'s':'');
+    if(strengthEntries.length) totalText += ' · volume <b>' + Math.round(totalVolume).toLocaleString() + ' ' + unit + '</b>';
+    if(runEntries.length) totalText += ' · ' + runEntries.length + ' run'+(runEntries.length>1?'s':'');
+    totalEl.innerHTML = totalText;
+
+    const maxWeight = Math.max(...exercises.map(e=>Number(e.weight)||0), 1);
+
+    list.innerHTML = exercises.map(e => {
+      const isOpen = openCardId === e.id;
+      if(e.type === 'run') return renderRunCard(e, isOpen);
+      return renderStrengthCard(e, isOpen, maxWeight);
+    }).join('');
+  }
+
+  function renderStrengthCard(e, isOpen, maxWeight){
+    const restSec = Number(e.rest)||0;
+    const timerState = timers[e.id];
+    const timerLabel = timerState ? fmtRest(timerState.remaining) : fmtRest(restSec);
+    return `
+      <div class="card ${isOpen?'open':''} ${e.done?'done':''}" data-id="${e.id}">
+        <div class="card-head">
+          <button class="done-check" data-done="${e.id}" aria-label="Mark exercise complete">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 8.5L6.2 11.5L13 4.5" stroke="#EDEDE6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="card-head-main" data-toggle="${e.id}" style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+          ${plateSvg(Number(e.weight)||0, maxWeight)}
+          <div class="card-main">
+            <div class="ex-name">${escapeHtml(e.name || 'Untitled exercise')}</div>
+            <div class="ex-meta"><b>${e.sets||0}×${e.reps||0}</b> @ ${e.weight||0} ${unit} · rest ${fmtRest(restSec)}</div>
+          </div>
+          <div class="chevron">▾</div>
+          </div>
+        </div>
+        <div class="card-body">
+          ${e.notes ? `<div class="ex-meta" style="margin-top:12px; font-family:Inter,sans-serif; color:var(--chalk);">${escapeHtml(e.notes)}</div>` : ''}
+          <div class="card-actions">
+            <button class="timer-btn ${timerState?'running':''}" data-timer="${e.id}">${timerState ? '⏸ '+timerLabel : '▶ Rest '+timerLabel}</button>
+            <div style="display:flex; gap:14px; align-items:center;">
+              <button class="delete-btn" data-edit="${e.id}" style="color:var(--iron-blue);">Edit</button>
+              <button class="delete-btn" data-delete="${e.id}">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderRunCard(e, isOpen){
+    const hasTimer = e.runType === 'Interval Run';
+    const timerState = timers[e.id];
+    const restSec = Number(e.rest)||0;
+    const timerLabel = timerState ? fmtRest(timerState.remaining) : fmtRest(restSec);
+    return `
+      <div class="card ${isOpen?'open':''} ${e.done?'done':''}" data-id="${e.id}">
+        <div class="card-head">
+          <button class="done-check" data-done="${e.id}" aria-label="Mark run complete">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 8.5L6.2 11.5L13 4.5" stroke="#EDEDE6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="card-head-main" data-toggle="${e.id}" style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+          ${runBadge(e.runType)}
+          <div class="card-main">
+            <div class="ex-name">${escapeHtml(e.runType || 'Run')}</div>
+            <div class="ex-meta">${runMetaText(e)}</div>
+          </div>
+          <div class="chevron">▾</div>
+          </div>
+        </div>
+        <div class="card-body">
+          ${e.notes ? `<div class="ex-meta" style="margin-top:12px; font-family:Inter,sans-serif; color:var(--chalk);">${escapeHtml(e.notes)}</div>` : ''}
+          <div class="card-actions">
+            ${hasTimer ? `<button class="timer-btn ${timerState?'running':''}" data-timer="${e.id}">${timerState ? '⏸ '+timerLabel : '▶ Rest '+timerLabel}</button>` : '<span></span>'}
+            <div style="display:flex; gap:14px; align-items:center;">
+              <button class="delete-btn" data-edit="${e.id}" style="color:var(--iron-blue);">Edit</button>
+              <button class="delete-btn" data-delete="${e.id}">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ---- Form sheet ----
+  const formOverlay = document.getElementById('formOverlay');
+  function openForm(existing){
+    editingId = existing ? existing.id : null;
+    document.getElementById('formTitle').textContent = existing ? 'Edit Exercise' : 'New Exercise';
+    document.getElementById('f-name').value = existing ? existing.name : '';
+    document.getElementById('f-sets').value = existing ? existing.sets : '';
+    document.getElementById('f-reps').value = existing ? existing.reps : '';
+    document.getElementById('f-weight').value = existing ? existing.weight : '';
+    document.getElementById('f-weight-label').textContent = 'Weight (' + unit + ')';
+    const restSec = existing ? (Number(existing.rest)||0) : 0;
+    document.getElementById('f-rest-min').value = existing ? Math.floor(restSec/60) : '';
+    document.getElementById('f-rest-sec').value = existing ? (restSec%60) : '';
+    document.getElementById('f-notes').value = existing ? existing.notes : '';
+    formOverlay.classList.add('show');
+    setTimeout(()=>document.getElementById('f-name').focus(), 50);
+  }
+  function closeForm(){ formOverlay.classList.remove('show'); }
+
+  document.getElementById('addBtn').addEventListener('click', ()=> openForm(null));
+  document.getElementById('cancelForm').addEventListener('click', closeForm);
+  formOverlay.addEventListener('click', (e)=>{ if(e.target === formOverlay) closeForm(); });
+
+  document.getElementById('saveForm').addEventListener('click', ()=>{
+    const name = document.getElementById('f-name').value.trim();
+    if(!name){ document.getElementById('f-name').focus(); return; }
+    const sets = document.getElementById('f-sets').value;
+    const reps = document.getElementById('f-reps').value;
+    const weight = document.getElementById('f-weight').value;
+    const min = Number(document.getElementById('f-rest-min').value)||0;
+    const sec = Number(document.getElementById('f-rest-sec').value)||0;
+    const notes = document.getElementById('f-notes').value.trim();
+    const rest = min*60+sec;
+
+    if(!db[selectedDate]) db[selectedDate] = [];
+
+    if(editingId){
+      const idx = db[selectedDate].findIndex(x=>x.id===editingId);
+      if(idx>-1) db[selectedDate][idx] = {...db[selectedDate][idx], type:'strength', name, sets, reps, weight, rest, notes};
+    } else {
+      db[selectedDate].push({id: uid(), type:'strength', name, sets, reps, weight, rest, notes});
+    }
+    persist();
+    closeForm();
+    render();
+  });
+
+  // ---- List interactions ----
+  document.getElementById('list').addEventListener('click', (e)=>{
+    const toggleId = e.target.closest('[data-toggle]')?.dataset.toggle;
+    const editId = e.target.closest('[data-edit]')?.dataset.edit;
+    const delId = e.target.closest('[data-delete]')?.dataset.delete;
+    const timerId = e.target.closest('[data-timer]')?.dataset.timer;
+    const doneId = e.target.closest('[data-done]')?.dataset.done;
+
+    if(doneId){
+      const ex = (db[selectedDate]||[]).find(x=>x.id===doneId);
+      if(ex){ ex.done = !ex.done; persist(); render(); }
+      return;
+    }
+    if(timerId){ toggleTimer(timerId); return; }
+    if(editId){
+      const ex = (db[selectedDate]||[]).find(x=>x.id===editId);
+      if(ex){ ex.type === 'run' ? openRunForm(ex) : openForm(ex); }
+      return;
+    }
+    if(delId){
+      if(confirm('Delete this exercise?')){
+        db[selectedDate] = (db[selectedDate]||[]).filter(x=>x.id!==delId);
+        persist();
+        render();
+      }
+      return;
+    }
+    if(toggleId){
+      openCardId = openCardId === toggleId ? null : toggleId;
+      render();
+    }
+  });
+
+  function toggleTimer(id){
+    if(timers[id]){
+      clearInterval(timers[id].interval);
+      delete timers[id];
+      render();
+      return;
+    }
+    const ex = (db[selectedDate]||[]).find(x=>x.id===id);
+    if(!ex) return;
+    let remaining = Number(ex.rest)||0;
+    if(remaining<=0){ return; }
+    timers[id] = { remaining, interval: null };
+    timers[id].interval = setInterval(()=>{
+      timers[id].remaining--;
+      if(timers[id].remaining<=0){
+        clearInterval(timers[id].interval);
+        delete timers[id];
+        if(navigator.vibrate) navigator.vibrate([200,100,200]);
+        render();
+        return;
+      }
+      const btn = document.querySelector(`[data-timer="${id}"]`);
+      if(btn) btn.textContent = '⏸ ' + fmtRest(timers[id].remaining);
+    }, 1000);
+    render();
+  }
+
+  // ---- Date nav ----
+  document.getElementById('prevDay').addEventListener('click', ()=>{ selectedDate = shiftDate(selectedDate,-1); openCardId=null; render(); });
+  document.getElementById('nextDay').addEventListener('click', ()=>{ selectedDate = shiftDate(selectedDate,1); openCardId=null; render(); });
+  document.getElementById('todayBtn').addEventListener('click', ()=>{ selectedDate = todayStr(); openCardId=null; render(); });
+  document.getElementById('datePicker').addEventListener('change', (e)=>{ selectedDate = e.target.value; openCardId=null; render(); });
+
+  // ---- Settings ----
+  const settingsOverlay = document.getElementById('settingsOverlay');
+  document.getElementById('settingsBtn').addEventListener('click', ()=>{
+    updateUnitButtons();
+    settingsOverlay.classList.add('show');
+  });
+  document.getElementById('closeSettings').addEventListener('click', ()=> settingsOverlay.classList.remove('show'));
+  settingsOverlay.addEventListener('click', (e)=>{ if(e.target===settingsOverlay) settingsOverlay.classList.remove('show'); });
+  function updateUnitButtons(){
+    document.getElementById('unitLb').classList.toggle('active', unit==='lb');
+    document.getElementById('unitKg').classList.toggle('active', unit==='kg');
+  }
+  document.getElementById('unitLb').addEventListener('click', ()=>{ unit='lb'; localStorage.setItem(UNIT_KEY,unit); updateUnitButtons(); render(); });
+  document.getElementById('unitKg').addEventListener('click', ()=>{ unit='kg'; localStorage.setItem(UNIT_KEY,unit); updateUnitButtons(); render(); });
+
+  // ---- Calendar ----
+  const calendarOverlay = document.getElementById('calendarOverlay');
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DOW_SHORT = ['S','M','T','W','T','F','S'];
+
+  function openCalendar(){
+    const [y,m] = selectedDate.split('-').map(Number);
+    calYear = y; calMonth = m-1;
+    renderCalendar();
+    calendarOverlay.classList.add('show');
+  }
+  function closeCalendar(){ calendarOverlay.classList.remove('show'); }
+
+  function renderCalendar(){
+    document.getElementById('calMonthLabel').textContent = MONTH_NAMES[calMonth] + ' ' + calYear;
+    const grid = document.getElementById('calGrid');
+    const firstOfMonth = new Date(calYear, calMonth, 1);
+    const startWeekday = firstOfMonth.getDay(); // 0=Sun
+    const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+    const todayS = todayStr();
+
+    let html = DOW_SHORT.map(d => `<div class="cal-dow">${d}</div>`).join('');
+    for(let i=0;i<startWeekday;i++){ html += `<div class="cal-day empty"></div>`; }
+    for(let day=1; day<=daysInMonth; day++){
+      const dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      const exercises = db[dateStr] || [];
+      const hasWorkout = exercises.length > 0;
+      const allDone = hasWorkout && exercises.every(x=>x.done);
+      const classes = ['cal-day'];
+      if(dateStr === todayS) classes.push('today');
+      if(dateStr === selectedDate) classes.push('selected');
+      if(allDone) classes.push('done-day');
+      html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${day}${hasWorkout && !allDone ? '<span class="cal-dot"></span>' : ''}</div>`;
+    }
+    grid.innerHTML = html;
+  }
+
+  document.getElementById('calendarBtn').addEventListener('click', openCalendar);
+  document.getElementById('closeCalendar').addEventListener('click', closeCalendar);
+  calendarOverlay.addEventListener('click', (e)=>{ if(e.target===calendarOverlay) closeCalendar(); });
+  document.getElementById('calPrevMonth').addEventListener('click', ()=>{
+    calMonth--; if(calMonth<0){ calMonth=11; calYear--; }
+    renderCalendar();
+  });
+  document.getElementById('calNextMonth').addEventListener('click', ()=>{
+    calMonth++; if(calMonth>11){ calMonth=0; calYear++; }
+    renderCalendar();
+  });
+  document.getElementById('calGrid').addEventListener('click', (e)=>{
+    const dateStr = e.target.closest('[data-date]')?.dataset.date;
+    if(!dateStr) return;
+    selectedDate = dateStr;
+    openCardId = null;
+    render();
+    closeCalendar();
+  });
+
+  // ---- Run form ----
+  const runFormOverlay = document.getElementById('runFormOverlay');
+
+  function showGroup(id, on){ document.getElementById(id).style.display = on ? '' : 'none'; }
+
+  function updateRunDistUnitButtons(){
+    const a = document.getElementById('rDistUnitA'), b = document.getElementById('rDistUnitB');
+    a.classList.toggle('active', runDistUnit === a.dataset.val);
+    b.classList.toggle('active', runDistUnit === b.dataset.val);
+  }
+  function updateRunPaceUnitButtons(){
+    document.getElementById('rPaceMi').classList.toggle('active', runPaceUnit==='min/mi');
+    document.getElementById('rPaceKm').classList.toggle('active', runPaceUnit==='min/km');
+  }
+
+  function setRunType(rt){
+    runType = rt;
+    document.querySelectorAll('#runTypeGrid button').forEach(b=> b.classList.toggle('active', b.dataset.runtype===rt));
+
+    const a = document.getElementById('rDistUnitA'), b = document.getElementById('rDistUnitB');
+    if(rt === 'Interval Run'){
+      a.textContent='M'; a.dataset.val='m';
+      b.textContent='KM'; b.dataset.val='km';
+      if(runDistUnit==='mi') runDistUnit='m';
+    } else {
+      a.textContent='MI'; a.dataset.val='mi';
+      b.textContent='KM'; b.dataset.val='km';
+      if(runDistUnit==='m') runDistUnit='mi';
+    }
+    updateRunDistUnitButtons();
+
+    document.getElementById('r-distance-label').textContent = rt==='Interval Run' ? 'Interval distance' : 'Distance';
+    document.getElementById('r-pace-label').textContent = rt==='Tempo Run' ? 'Fast pace' : 'Pace';
+
+    showGroup('runDistanceGroup', rt !== 'Tempo Run');
+    showGroup('runPaceGroup', true);
+    showGroup('runRestGroup', rt === 'Interval Run');
+    showGroup('runFastTimeGroup', rt === 'Tempo Run');
+    showGroup('runSlowTimeGroup', rt === 'Tempo Run');
+    showGroup('runRepsGroup', rt === 'Tempo Run' || rt === 'Interval Run');
+  }
+
+  document.getElementById('runTypeGrid').addEventListener('click', (e)=>{
+    const rt = e.target.closest('[data-runtype]')?.dataset.runtype;
+    if(rt) setRunType(rt);
+  });
+  document.getElementById('rDistUnitA').addEventListener('click', (e)=>{ runDistUnit = e.target.dataset.val; updateRunDistUnitButtons(); });
+  document.getElementById('rDistUnitB').addEventListener('click', (e)=>{ runDistUnit = e.target.dataset.val; updateRunDistUnitButtons(); });
+  document.getElementById('rPaceMi').addEventListener('click', ()=>{ runPaceUnit='min/mi'; updateRunPaceUnitButtons(); });
+  document.getElementById('rPaceKm').addEventListener('click', ()=>{ runPaceUnit='min/km'; updateRunPaceUnitButtons(); });
+
+  function openRunForm(existing){
+    runEditingId = existing ? existing.id : null;
+    document.getElementById('runFormTitle').textContent = existing ? 'Edit Run' : 'New Run';
+    document.getElementById('runFormDateLabel').textContent = dowFull(selectedDate).full;
+
+    const rt = existing ? (existing.runType || 'Long Run') : 'Long Run';
+    runDistUnit = existing ? (existing.distanceUnit || (rt==='Interval Run' ? 'm' : 'mi')) : (rt==='Interval Run' ? 'm' : 'mi');
+    runPaceUnit = existing ? (existing.paceUnit || 'min/mi') : 'min/mi';
+    setRunType(rt);
+    updateRunDistUnitButtons();
+    updateRunPaceUnitButtons();
+
+    document.getElementById('r-distance').value = existing && existing.distance != null ? existing.distance : '';
+    document.getElementById('r-pace').value = existing && existing.pace != null ? existing.pace : '';
+
+    const restSec = existing ? (Number(existing.rest)||0) : 0;
+    document.getElementById('r-rest-min').value = existing && existing.rest ? Math.floor(restSec/60) : '';
+    document.getElementById('r-rest-sec').value = existing && existing.rest ? (restSec%60) : '';
+
+    const fastSec = existing ? (Number(existing.fastTime)||0) : 0;
+    document.getElementById('r-fast-min').value = existing && existing.fastTime ? Math.floor(fastSec/60) : '';
+    document.getElementById('r-fast-sec').value = existing && existing.fastTime ? (fastSec%60) : '';
+
+    const slowSec = existing ? (Number(existing.slowTime)||0) : 0;
+    document.getElementById('r-slow-min').value = existing && existing.slowTime ? Math.floor(slowSec/60) : '';
+    document.getElementById('r-slow-sec').value = existing && existing.slowTime ? (slowSec%60) : '';
+
+    document.getElementById('r-reps').value = existing && existing.reps != null ? existing.reps : '';
+    document.getElementById('r-notes').value = existing ? (existing.notes || '') : '';
+
+    runFormOverlay.classList.add('show');
+  }
+  function closeRunForm(){ runFormOverlay.classList.remove('show'); }
+
+  document.getElementById('runBtn').addEventListener('click', ()=> openRunForm(null));
+  document.getElementById('cancelRunForm').addEventListener('click', closeRunForm);
+  runFormOverlay.addEventListener('click', (e)=>{ if(e.target === runFormOverlay) closeRunForm(); });
+
+  document.getElementById('saveRunForm').addEventListener('click', ()=>{
+    const distance = document.getElementById('r-distance').value;
+    const pace = document.getElementById('r-pace').value.trim();
+    const restMin = Number(document.getElementById('r-rest-min').value)||0;
+    const restSec = Number(document.getElementById('r-rest-sec').value)||0;
+    const fastMin = Number(document.getElementById('r-fast-min').value)||0;
+    const fastSecV = Number(document.getElementById('r-fast-sec').value)||0;
+    const slowMin = Number(document.getElementById('r-slow-min').value)||0;
+    const slowSecV = Number(document.getElementById('r-slow-sec').value)||0;
+    const reps = document.getElementById('r-reps').value;
+    const notes = document.getElementById('r-notes').value.trim();
+
+    const entry = { type:'run', runType, pace, paceUnit: runPaceUnit, notes };
+    if(runType !== 'Tempo Run'){
+      entry.distance = distance;
+      entry.distanceUnit = runDistUnit;
+    }
+    if(runType === 'Interval Run'){
+      entry.rest = restMin*60 + restSec;
+      entry.reps = reps;
+    }
+    if(runType === 'Tempo Run'){
+      entry.fastTime = fastMin*60 + fastSecV;
+      entry.slowTime = slowMin*60 + slowSecV;
+      entry.reps = reps;
+    }
+
+    if(!db[selectedDate]) db[selectedDate] = [];
+    if(runEditingId){
+      const idx = db[selectedDate].findIndex(x=>x.id===runEditingId);
+      if(idx>-1) db[selectedDate][idx] = {...db[selectedDate][idx], ...entry};
+    } else {
+      db[selectedDate].push({id: uid(), done:false, ...entry});
+    }
+    persist();
+    closeRunForm();
+    render();
+  });
+
+  // ---- Export / Import ----
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const payload = { unit, workouts: db, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ironlog-backup-' + todayStr() + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  const importFileInput = document.getElementById('importFile');
+  document.getElementById('importBtn').addEventListener('click', ()=> importFileInput.click());
+  importFileInput.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const parsed = JSON.parse(reader.result);
+        const incoming = parsed.workouts || parsed; // tolerate raw db exports too
+        if(typeof incoming !== 'object') throw new Error('bad format');
+        if(Object.keys(db).length > 0){
+          if(!confirm('This will merge into your existing log, overwriting any days that match. Continue?')) return;
+        }
+        db = {...db, ...incoming};
+        if(parsed.unit){ unit = parsed.unit; localStorage.setItem(UNIT_KEY, unit); }
+        persist();
+        updateUnitButtons();
+        render();
+        alert('Import complete.');
+      }catch(err){
+        alert('Could not read that file — make sure it\'s an Iron Log export.');
+      }
+      importFileInput.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
