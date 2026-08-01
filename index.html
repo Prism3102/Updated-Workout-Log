@@ -295,6 +295,11 @@
     color:#0e1620;
     font-size:24px;
   }
+  .fab button.swim-fab{
+    background:#3EA8B0;
+    color:#0a1f21;
+    font-size:24px;
+  }
   .sheet-overlay{
     position:fixed;
     inset:0;
@@ -313,6 +318,7 @@
     padding:20px 20px calc(24px + env(safe-area-inset-bottom));
     max-height:85vh;
     overflow-y:auto;
+    overflow-x:hidden;
   }
   .sheet-title{
     font-family:'Oswald',sans-serif;
@@ -379,6 +385,32 @@
     color:var(--accent);
     border-color:var(--accent);
   }
+  .swim-set-row{
+    background:var(--steel-light);
+    border:1px solid var(--hairline);
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:10px;
+    position:relative;
+  }
+  .swim-set-label{
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    font-size:11px;
+    letter-spacing:0.06em;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .swim-set-remove{
+    position:absolute;
+    top:10px;
+    right:10px;
+    background:none;
+    border:none;
+    color:var(--danger);
+    font-size:14px;
+    cursor:pointer;
+  }
   .storage-note{
     font-size:11px;
     color:var(--muted);
@@ -411,8 +443,9 @@
   }
   .cal-grid{
     display:grid;
-    grid-template-columns:repeat(7,1fr);
+    grid-template-columns:repeat(7, minmax(0, 1fr));
     gap:6px;
+    width:100%;
   }
   .cal-dow{
     text-align:center;
@@ -420,11 +453,14 @@
     letter-spacing:0.06em;
     text-transform:uppercase;
     color:var(--muted);
-    padding-bottom:4px;
+    line-height:1.6;
+    min-width:0;
+    overflow:hidden;
   }
   .cal-day{
     position:relative;
-    aspect-ratio:1;
+    height:44px;
+    min-width:0;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -436,7 +472,7 @@
     font-size:13px;
     cursor:pointer;
   }
-  .cal-day.empty{background:none; cursor:default;}
+  .cal-day.cal-empty{background:none; cursor:default;}
   .cal-day.today{border-color:var(--iron-blue); color:var(--iron-blue);}
   .cal-day.selected{background:var(--accent); color:#26200c; font-weight:700;}
   .cal-day.done-day{background:#1E3A2C; color:#BFE8CE;}
@@ -477,6 +513,7 @@
   <div class="list" id="list"></div>
 
   <div class="fab">
+    <button id="swimBtn" class="swim-fab" aria-label="Add swim">🏊</button>
     <button id="runBtn" class="run-fab" aria-label="Add run">🏃</button>
     <button id="addBtn" aria-label="Add exercise">+</button>
   </div>
@@ -602,6 +639,65 @@
   </div>
 </div>
 
+<div class="sheet-overlay" id="swimFormOverlay">
+  <div class="sheet">
+    <div class="sheet-title" id="swimFormTitle">New Swim</div>
+    <div class="sheet-sub">Assigned to <span id="swimFormDateLabel"></span></div>
+
+    <div class="field full" style="margin-top:12px;">
+      <label>Swim type</label>
+      <div class="run-type-grid" id="swimTypeGrid">
+        <button type="button" data-swimtype="Long Swim">Long Swim</button>
+        <button type="button" data-swimtype="Intervals Swim">Intervals Swim</button>
+        <button type="button" data-swimtype="Long Swim with Fins">Long Swim w/ Fins</button>
+        <button type="button" data-swimtype="Intervals Swim with Fins">Intervals w/ Fins</button>
+      </div>
+    </div>
+
+    <div class="form-grid" id="swLongGroup">
+      <div class="field full">
+        <label>Log by</label>
+        <div class="unit-toggle" style="margin-top:6px;">
+          <button type="button" data-val="distance" id="swLongModeDist">Distance</button>
+          <button type="button" data-val="time" id="swLongModeTime">Time</button>
+        </div>
+      </div>
+      <div class="field full" id="swLongDistanceField">
+        <label>Distance</label>
+        <div class="rest-row">
+          <input type="number" id="sw-distance" min="0" step="1" inputmode="numeric" placeholder="1500" style="width:60%">
+          <div class="unit-toggle" style="width:40%; margin-top:0;">
+            <button type="button" data-val="m" id="swDistUnitA">M</button>
+            <button type="button" data-val="yd" id="swDistUnitB">YD</button>
+          </div>
+        </div>
+      </div>
+      <div class="field full" id="swLongTimeField">
+        <label>Time (mm:ss)</label>
+        <div class="rest-row">
+          <input type="number" id="sw-time-min" min="0" inputmode="numeric" placeholder="30" style="width:50%">
+          <input type="number" id="sw-time-sec" min="0" max="59" inputmode="numeric" placeholder="0" style="width:50%">
+        </div>
+      </div>
+    </div>
+
+    <div id="swIntervalsGroup" style="display:none; margin-top:12px;">
+      <div id="swSetsContainer"></div>
+      <button type="button" class="btn ghost" id="swAddSetBtn" style="width:100%; margin-bottom:4px;">+ Add another distance</button>
+    </div>
+
+    <div class="field full" style="margin-top:12px;">
+      <label for="sw-notes">Notes</label>
+      <textarea id="sw-notes" placeholder="Set, drills, how it felt..."></textarea>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn ghost" id="cancelSwimForm">Cancel</button>
+      <button class="btn primary" id="saveSwimForm">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet-overlay" id="settingsOverlay">
   <div class="sheet">
     <div class="sheet-title">Settings</div>
@@ -635,10 +731,14 @@
 
 <div class="sheet-overlay" id="calendarOverlay">
   <div class="sheet">
+    <div class="unit-toggle" id="calViewToggle" style="margin-bottom:14px;">
+      <button type="button" data-mode="month" id="calModeMonth">Month</button>
+      <button type="button" data-mode="week" id="calModeWeek">Week</button>
+    </div>
     <div class="cal-nav">
-      <button id="calPrevMonth" aria-label="Previous month">‹</button>
+      <button id="calPrevMonth" aria-label="Previous">‹</button>
       <div class="cal-month-label" id="calMonthLabel">—</div>
-      <button id="calNextMonth" aria-label="Next month">›</button>
+      <button id="calNextMonth" aria-label="Next">›</button>
     </div>
     <div class="cal-grid" id="calGrid"></div>
     <div class="sheet-actions">
@@ -655,12 +755,19 @@
   let unit = 'lb';
   let selectedDate = todayStr();
   let calYear, calMonth; // current calendar view, 0-indexed month
+  let calViewMode = 'month'; // 'month' | 'week'
+  let weekStart; // Monday date string for week view
   let openCardId = null;
   let editingId = null; // id being edited, or null for new
   let runEditingId = null; // id being edited in run form, or null for new
   let runType = 'Long Run';
   let runDistUnit = 'mi';
   let runPaceUnit = 'min/mi';
+  let swimEditingId = null;
+  let swimType = 'Long Swim';
+  let swDistUnit = 'm';
+  let swLongMode = 'distance';
+  let swSets = [{distance:'', distanceUnit:'m', restMin:'', restSec:'', reps:''}];
   let timers = {}; // id -> {remaining, interval}
 
   function todayStr(){
@@ -728,7 +835,7 @@
       <div style="width:38px;height:28px;border-radius:8px;background:${color}22;border:1.5px solid ${color};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;color:${color};">${abbr}</div>
     </div>`;
   }
-  function distUnitLabel(u){ return u==='m' ? 'm' : (u==='km' ? 'km' : 'mi'); }
+  function distUnitLabel(u){ return u==='m' ? 'm' : (u==='km' ? 'km' : (u==='yd' ? 'yd' : 'mi')); }
   function paceUnitLabel(u){ return u==='min/km' ? '/km' : '/mi'; }
   function runMetaText(e){
     if(e.runType === 'Tempo Run'){
@@ -738,6 +845,31 @@
       return (e.reps ? e.reps+'× ' : '')+(e.distance||'--')+' '+distUnitLabel(e.distanceUnit)+' @ '+(e.pace||'--')+' '+paceUnitLabel(e.paceUnit)+' · rest '+fmtRest(Number(e.rest)||0);
     }
     return (e.distance||'--')+' '+distUnitLabel(e.distanceUnit)+' @ '+(e.pace||'--')+' '+paceUnitLabel(e.paceUnit);
+  }
+
+  const SWIM_BADGE_MAP = {
+    'Long Swim': {abbr:'LS', color:'#3EA8B0'},
+    'Intervals Swim': {abbr:'IS', color:'#2E8A91'},
+    'Long Swim with Fins': {abbr:'LSF', color:'#3EA8B0'},
+    'Intervals Swim with Fins': {abbr:'ISF', color:'#2E8A91'}
+  };
+  function swimBadge(st){
+    const {abbr,color} = SWIM_BADGE_MAP[st] || {abbr:'SW', color:'#8A8F98'};
+    return `<div class="plate-rig" style="display:flex;align-items:center;justify-content:center;">
+      <div style="width:38px;height:28px;border-radius:8px;background:${color}22;border:1.5px solid ${color};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:10px;color:${color};">${abbr}</div>
+    </div>`;
+  }
+  function swimMetaText(e){
+    const isLong = (e.swimType||'').startsWith('Long Swim');
+    if(isLong){
+      if(e.logType === 'time'){
+        return fmtRest(Number(e.time)||0)+' swim';
+      }
+      return (e.distance||'--')+' '+distUnitLabel(e.distanceUnit);
+    }
+    const sets = e.intervalSets || [];
+    if(sets.length===0) return 'No intervals set';
+    return sets.map(s => (s.reps||0)+'× '+(s.distance||'--')+distUnitLabel(s.distanceUnit)+' rest '+fmtRest(Number(s.rest)||0)).join(' + ');
   }
 
   function render(){
@@ -751,17 +883,19 @@
     const totalEl = document.getElementById('sessionTotal');
 
     if(exercises.length === 0){
-      list.innerHTML = `<div class="empty"><div class="big">No workouts logged</div>Tap + to log a lift, or 🏃 to log a run, for ${full}.</div>`;
+      list.innerHTML = `<div class="empty"><div class="big">No workouts logged</div>Tap + to log a lift, 🏃 for a run, or 🏊 for a swim, for ${full}.</div>`;
       totalEl.textContent = '';
       return;
     }
 
-    const strengthEntries = exercises.filter(e=>e.type!=='run');
+    const strengthEntries = exercises.filter(e=>e.type!=='run' && e.type!=='swim');
     const runEntries = exercises.filter(e=>e.type==='run');
+    const swimEntries = exercises.filter(e=>e.type==='swim');
     const totalVolume = strengthEntries.reduce((sum,e)=> sum + (Number(e.sets)||0)*(Number(e.reps)||0)*(Number(e.weight)||0), 0);
     let totalText = exercises.length + ' item'+(exercises.length>1?'s':'');
     if(strengthEntries.length) totalText += ' · volume <b>' + Math.round(totalVolume).toLocaleString() + ' ' + unit + '</b>';
     if(runEntries.length) totalText += ' · ' + runEntries.length + ' run'+(runEntries.length>1?'s':'');
+    if(swimEntries.length) totalText += ' · ' + swimEntries.length + ' swim'+(swimEntries.length>1?'s':'');
     totalEl.innerHTML = totalText;
 
     const maxWeight = Math.max(...exercises.map(e=>Number(e.weight)||0), 1);
@@ -769,6 +903,7 @@
     list.innerHTML = exercises.map(e => {
       const isOpen = openCardId === e.id;
       if(e.type === 'run') return renderRunCard(e, isOpen);
+      if(e.type === 'swim') return renderSwimCard(e, isOpen);
       return renderStrengthCard(e, isOpen, maxWeight);
     }).join('');
   }
@@ -833,6 +968,37 @@
           ${e.notes ? `<div class="ex-meta" style="margin-top:12px; font-family:Inter,sans-serif; color:var(--chalk);">${escapeHtml(e.notes)}</div>` : ''}
           <div class="card-actions">
             ${hasTimer ? `<button class="timer-btn ${timerState?'running':''}" data-timer="${e.id}">${timerState ? '⏸ '+timerLabel : '▶ Rest '+timerLabel}</button>` : '<span></span>'}
+            <div style="display:flex; gap:14px; align-items:center;">
+              <button class="delete-btn" data-edit="${e.id}" style="color:var(--iron-blue);">Edit</button>
+              <button class="delete-btn" data-delete="${e.id}">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderSwimCard(e, isOpen){
+    return `
+      <div class="card ${isOpen?'open':''} ${e.done?'done':''}" data-id="${e.id}">
+        <div class="card-head">
+          <button class="done-check" data-done="${e.id}" aria-label="Mark swim complete">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 8.5L6.2 11.5L13 4.5" stroke="#EDEDE6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="card-head-main" data-toggle="${e.id}" style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+          ${swimBadge(e.swimType)}
+          <div class="card-main">
+            <div class="ex-name">${escapeHtml(e.swimType || 'Swim')}</div>
+            <div class="ex-meta">${swimMetaText(e)}</div>
+          </div>
+          <div class="chevron">▾</div>
+          </div>
+        </div>
+        <div class="card-body">
+          ${e.notes ? `<div class="ex-meta" style="margin-top:12px; font-family:Inter,sans-serif; color:var(--chalk);">${escapeHtml(e.notes)}</div>` : ''}
+          <div class="card-actions">
+            <span></span>
             <div style="display:flex; gap:14px; align-items:center;">
               <button class="delete-btn" data-edit="${e.id}" style="color:var(--iron-blue);">Edit</button>
               <button class="delete-btn" data-delete="${e.id}">Delete</button>
@@ -911,7 +1077,11 @@
     if(timerId){ toggleTimer(timerId); return; }
     if(editId){
       const ex = (db[selectedDate]||[]).find(x=>x.id===editId);
-      if(ex){ ex.type === 'run' ? openRunForm(ex) : openForm(ex); }
+      if(ex){
+        if(ex.type === 'run') openRunForm(ex);
+        else if(ex.type === 'swim') openSwimForm(ex);
+        else openForm(ex);
+      }
       return;
     }
     if(delId){
@@ -979,49 +1149,101 @@
   // ---- Calendar ----
   const calendarOverlay = document.getElementById('calendarOverlay');
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const DOW_SHORT = ['S','M','T','W','T','F','S'];
+  const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DOW_SHORT = ['M','T','W','T','F','S','S'];
+
+  function mondayOf(dateStr){
+    const [y,m,d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    const dow = dt.getDay(); // 0=Sun ... 6=Sat
+    const diff = (dow === 0) ? -6 : (1 - dow);
+    dt.setDate(dt.getDate() + diff);
+    return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+  }
+  function shortLabel(dateStr){
+    const [y,m,d] = dateStr.split('-').map(Number);
+    return MONTH_SHORT[m-1]+' '+d;
+  }
 
   function openCalendar(){
     const [y,m] = selectedDate.split('-').map(Number);
     calYear = y; calMonth = m-1;
+    weekStart = mondayOf(selectedDate);
+    updateCalModeButtons();
     renderCalendar();
     calendarOverlay.classList.add('show');
   }
   function closeCalendar(){ calendarOverlay.classList.remove('show'); }
 
+  function updateCalModeButtons(){
+    document.getElementById('calModeMonth').classList.toggle('active', calViewMode==='month');
+    document.getElementById('calModeWeek').classList.toggle('active', calViewMode==='week');
+  }
+
+  function dayCellHtml(dateStr, label){
+    const exercises = db[dateStr] || [];
+    const hasWorkout = exercises.length > 0;
+    const allDone = hasWorkout && exercises.every(x=>x.done);
+    const classes = ['cal-day'];
+    if(dateStr === todayStr()) classes.push('today');
+    if(dateStr === selectedDate) classes.push('selected');
+    if(allDone) classes.push('done-day');
+    return `<div class="${classes.join(' ')}" data-date="${dateStr}">${label}${hasWorkout && !allDone ? '<span class="cal-dot"></span>' : ''}</div>`;
+  }
+
   function renderCalendar(){
+    if(calViewMode === 'week') renderWeekGrid();
+    else renderMonthGrid();
+  }
+
+  function renderMonthGrid(){
     document.getElementById('calMonthLabel').textContent = MONTH_NAMES[calMonth] + ' ' + calYear;
     const grid = document.getElementById('calGrid');
     const firstOfMonth = new Date(calYear, calMonth, 1);
-    const startWeekday = firstOfMonth.getDay(); // 0=Sun
+    const startWeekday = (firstOfMonth.getDay() + 6) % 7; // 0=Mon ... 6=Sun
     const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
-    const todayS = todayStr();
 
     let html = DOW_SHORT.map(d => `<div class="cal-dow">${d}</div>`).join('');
-    for(let i=0;i<startWeekday;i++){ html += `<div class="cal-day empty"></div>`; }
+    for(let i=0;i<startWeekday;i++){ html += `<div class="cal-day cal-empty"></div>`; }
     for(let day=1; day<=daysInMonth; day++){
       const dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-      const exercises = db[dateStr] || [];
-      const hasWorkout = exercises.length > 0;
-      const allDone = hasWorkout && exercises.every(x=>x.done);
-      const classes = ['cal-day'];
-      if(dateStr === todayS) classes.push('today');
-      if(dateStr === selectedDate) classes.push('selected');
-      if(allDone) classes.push('done-day');
-      html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${day}${hasWorkout && !allDone ? '<span class="cal-dot"></span>' : ''}</div>`;
+      html += dayCellHtml(dateStr, day);
     }
+    grid.innerHTML = html;
+  }
+
+  function renderWeekGrid(){
+    const days = [];
+    for(let i=0;i<7;i++) days.push(shiftDate(weekStart, i));
+    document.getElementById('calMonthLabel').textContent = shortLabel(days[0]) + ' – ' + shortLabel(days[6]);
+    const grid = document.getElementById('calGrid');
+    let html = DOW_SHORT.map(d => `<div class="cal-dow">${d}</div>`).join('');
+    days.forEach(dateStr => {
+      const day = Number(dateStr.split('-')[2]);
+      html += dayCellHtml(dateStr, day);
+    });
     grid.innerHTML = html;
   }
 
   document.getElementById('calendarBtn').addEventListener('click', openCalendar);
   document.getElementById('closeCalendar').addEventListener('click', closeCalendar);
   calendarOverlay.addEventListener('click', (e)=>{ if(e.target===calendarOverlay) closeCalendar(); });
+  document.getElementById('calViewToggle').addEventListener('click', (e)=>{
+    const mode = e.target.closest('[data-mode]')?.dataset.mode;
+    if(!mode || mode === calViewMode) return;
+    calViewMode = mode;
+    if(mode === 'week') weekStart = mondayOf(selectedDate);
+    updateCalModeButtons();
+    renderCalendar();
+  });
   document.getElementById('calPrevMonth').addEventListener('click', ()=>{
-    calMonth--; if(calMonth<0){ calMonth=11; calYear--; }
+    if(calViewMode === 'week'){ weekStart = shiftDate(weekStart, -7); }
+    else { calMonth--; if(calMonth<0){ calMonth=11; calYear--; } }
     renderCalendar();
   });
   document.getElementById('calNextMonth').addEventListener('click', ()=>{
-    calMonth++; if(calMonth>11){ calMonth=0; calYear++; }
+    if(calViewMode === 'week'){ weekStart = shiftDate(weekStart, 7); }
+    else { calMonth++; if(calMonth>11){ calMonth=0; calYear++; } }
     renderCalendar();
   });
   document.getElementById('calGrid').addEventListener('click', (e)=>{
@@ -1158,6 +1380,177 @@
     }
     persist();
     closeRunForm();
+    render();
+  });
+
+  // ---- Swim form ----
+  const swimFormOverlay = document.getElementById('swimFormOverlay');
+  const swSetsContainer = document.getElementById('swSetsContainer');
+
+  function swimSetRowHtml(set, idx){
+    return `
+      <div class="swim-set-row" data-idx="${idx}">
+        ${idx>0 ? `<button type="button" class="swim-set-remove" data-idx="${idx}">✕</button>` : ''}
+        <div class="swim-set-label">Distance ${idx+1}</div>
+        <div class="form-grid" style="margin-top:0;">
+          <div class="field full">
+            <label>Length</label>
+            <div class="rest-row">
+              <input type="number" class="ss-distance" data-idx="${idx}" min="0" step="1" inputmode="numeric" placeholder="100" value="${set.distance}" style="width:60%">
+              <div class="unit-toggle" style="width:40%; margin-top:0;">
+                <button type="button" class="ss-unit ${set.distanceUnit==='m'?'active':''}" data-idx="${idx}" data-val="m">M</button>
+                <button type="button" class="ss-unit ${set.distanceUnit==='yd'?'active':''}" data-idx="${idx}" data-val="yd">YD</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Rest (mm:ss)</label>
+            <div class="rest-row">
+              <input type="number" class="ss-rest-min" data-idx="${idx}" min="0" inputmode="numeric" placeholder="0" value="${set.restMin}" style="width:50%">
+              <input type="number" class="ss-rest-sec" data-idx="${idx}" min="0" max="59" inputmode="numeric" placeholder="20" value="${set.restSec}" style="width:50%">
+            </div>
+          </div>
+          <div class="field">
+            <label># Intervals</label>
+            <input type="number" class="ss-reps" data-idx="${idx}" min="0" inputmode="numeric" placeholder="4" value="${set.reps}">
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderSwimSets(){
+    swSetsContainer.innerHTML = swSets.map((set,idx)=> swimSetRowHtml(set, idx)).join('');
+    document.getElementById('swAddSetBtn').style.display = swSets.length >= 3 ? 'none' : '';
+  }
+
+  swSetsContainer.addEventListener('input', (e)=>{
+    const idx = Number(e.target.dataset.idx);
+    if(Number.isNaN(idx) || !swSets[idx]) return;
+    if(e.target.classList.contains('ss-distance')) swSets[idx].distance = e.target.value;
+    if(e.target.classList.contains('ss-rest-min')) swSets[idx].restMin = e.target.value;
+    if(e.target.classList.contains('ss-rest-sec')) swSets[idx].restSec = e.target.value;
+    if(e.target.classList.contains('ss-reps')) swSets[idx].reps = e.target.value;
+  });
+  swSetsContainer.addEventListener('click', (e)=>{
+    const unitBtn = e.target.closest('.ss-unit');
+    if(unitBtn){
+      const idx = Number(unitBtn.dataset.idx);
+      swSets[idx].distanceUnit = unitBtn.dataset.val;
+      renderSwimSets();
+      return;
+    }
+    const removeBtn = e.target.closest('.swim-set-remove');
+    if(removeBtn){
+      const idx = Number(removeBtn.dataset.idx);
+      swSets.splice(idx,1);
+      renderSwimSets();
+    }
+  });
+  document.getElementById('swAddSetBtn').addEventListener('click', ()=>{
+    if(swSets.length<3) swSets.push({distance:'', distanceUnit:'m', restMin:'', restSec:'', reps:''});
+    renderSwimSets();
+  });
+
+  function updateSwDistUnitButtons(){
+    document.getElementById('swDistUnitA').classList.toggle('active', swDistUnit==='m');
+    document.getElementById('swDistUnitB').classList.toggle('active', swDistUnit==='yd');
+  }
+  document.getElementById('swDistUnitA').addEventListener('click', ()=>{ swDistUnit='m'; updateSwDistUnitButtons(); });
+  document.getElementById('swDistUnitB').addEventListener('click', ()=>{ swDistUnit='yd'; updateSwDistUnitButtons(); });
+
+  function updateSwLongModeButtons(){
+    document.getElementById('swLongModeDist').classList.toggle('active', swLongMode==='distance');
+    document.getElementById('swLongModeTime').classList.toggle('active', swLongMode==='time');
+    showGroup('swLongDistanceField', swLongMode==='distance');
+    showGroup('swLongTimeField', swLongMode==='time');
+  }
+  document.getElementById('swLongModeDist').addEventListener('click', ()=>{ swLongMode='distance'; updateSwLongModeButtons(); });
+  document.getElementById('swLongModeTime').addEventListener('click', ()=>{ swLongMode='time'; updateSwLongModeButtons(); });
+
+  function setSwimType(st){
+    swimType = st;
+    document.querySelectorAll('#swimTypeGrid button').forEach(b=> b.classList.toggle('active', b.dataset.swimtype===st));
+    const isLong = st.startsWith('Long Swim');
+    showGroup('swLongGroup', isLong);
+    document.getElementById('swIntervalsGroup').style.display = isLong ? 'none' : '';
+    if(!isLong) renderSwimSets();
+  }
+  document.getElementById('swimTypeGrid').addEventListener('click', (e)=>{
+    const st = e.target.closest('[data-swimtype]')?.dataset.swimtype;
+    if(st) setSwimType(st);
+  });
+
+  function openSwimForm(existing){
+    swimEditingId = existing ? existing.id : null;
+    document.getElementById('swimFormTitle').textContent = existing ? 'Edit Swim' : 'New Swim';
+    document.getElementById('swimFormDateLabel').textContent = dowFull(selectedDate).full;
+
+    const st = existing ? (existing.swimType || 'Long Swim') : 'Long Swim';
+    swDistUnit = existing ? (existing.distanceUnit || 'm') : 'm';
+    swLongMode = existing ? (existing.logType || 'distance') : 'distance';
+    setSwimType(st);
+    updateSwDistUnitButtons();
+    updateSwLongModeButtons();
+
+    document.getElementById('sw-distance').value = existing && existing.distance != null ? existing.distance : '';
+    const timeSec = existing ? (Number(existing.time)||0) : 0;
+    document.getElementById('sw-time-min').value = existing && existing.time ? Math.floor(timeSec/60) : '';
+    document.getElementById('sw-time-sec').value = existing && existing.time ? (timeSec%60) : '';
+
+    if(existing && existing.intervalSets && existing.intervalSets.length){
+      swSets = existing.intervalSets.map(s => ({
+        distance: s.distance != null ? s.distance : '',
+        distanceUnit: s.distanceUnit || 'm',
+        restMin: s.rest ? Math.floor((Number(s.rest)||0)/60) : '',
+        restSec: s.rest ? ((Number(s.rest)||0)%60) : '',
+        reps: s.reps != null ? s.reps : ''
+      }));
+    } else {
+      swSets = [{distance:'', distanceUnit:'m', restMin:'', restSec:'', reps:''}];
+    }
+    if(!st.startsWith('Long Swim')) renderSwimSets();
+
+    document.getElementById('sw-notes').value = existing ? (existing.notes || '') : '';
+    swimFormOverlay.classList.add('show');
+  }
+  function closeSwimForm(){ swimFormOverlay.classList.remove('show'); }
+
+  document.getElementById('swimBtn').addEventListener('click', ()=> openSwimForm(null));
+  document.getElementById('cancelSwimForm').addEventListener('click', closeSwimForm);
+  swimFormOverlay.addEventListener('click', (e)=>{ if(e.target === swimFormOverlay) closeSwimForm(); });
+
+  document.getElementById('saveSwimForm').addEventListener('click', ()=>{
+    const notes = document.getElementById('sw-notes').value.trim();
+    const entry = { type:'swim', swimType, notes };
+
+    if(swimType.startsWith('Long Swim')){
+      entry.logType = swLongMode;
+      if(swLongMode === 'time'){
+        const tMin = Number(document.getElementById('sw-time-min').value)||0;
+        const tSec = Number(document.getElementById('sw-time-sec').value)||0;
+        entry.time = tMin*60 + tSec;
+      } else {
+        entry.distance = document.getElementById('sw-distance').value;
+        entry.distanceUnit = swDistUnit;
+      }
+    } else {
+      entry.intervalSets = swSets.map(s => ({
+        distance: s.distance,
+        distanceUnit: s.distanceUnit,
+        rest: (Number(s.restMin)||0)*60 + (Number(s.restSec)||0),
+        reps: s.reps
+      }));
+    }
+
+    if(!db[selectedDate]) db[selectedDate] = [];
+    if(swimEditingId){
+      const idx = db[selectedDate].findIndex(x=>x.id===swimEditingId);
+      if(idx>-1) db[selectedDate][idx] = {...db[selectedDate][idx], ...entry};
+    } else {
+      db[selectedDate].push({id: uid(), done:false, ...entry});
+    }
+    persist();
+    closeSwimForm();
     render();
   });
 
